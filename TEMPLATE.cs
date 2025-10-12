@@ -14,7 +14,6 @@ namespace DisableDoors
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
-            // MelonLogger.Msg($"[DisableDoors] Scene loaded: {sceneName}");
             DisableDoorInteractions();
         }
 
@@ -38,7 +37,6 @@ namespace DisableDoors
                     {
                         if (current.name.ToLower().Contains(keyword.ToLower()))
                         {
-                            // MelonLogger.Msg($"{current.name} matches {keyword}");
                             isDoor = true;
                             break;
                         }
@@ -52,13 +50,6 @@ namespace DisableDoors
                 {
                     // Disable only the interaction component
                     interaction.enabled = false;
-
-
-                    // MelonLogger.Msg($"Disabled: {obj.name} | Chain: {chain}");
-                }
-                else
-                {
-                    // MelonLogger.Msg($"Not a door: {obj.name}");
                 }
             }
         }
