@@ -24,8 +24,9 @@ namespace DisableDoors
 
                 foreach (string keyword in DoorKeywords)
                 {
-                    if (current.name.ToLower().Contains(keyword.ToLower()))
+                    if (obj.name.ToLower().Contains(keyword.ToLower()))
                     {
+                        //MelonLogger.Msg($"Disabling interaction on door: {obj.name}");
                         interaction.enabled = false;
                         break;
                     }
@@ -34,5 +35,3 @@ namespace DisableDoors
         }
     }
 }
-
-
