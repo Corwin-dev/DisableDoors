@@ -25,14 +25,12 @@ namespace DisableDoors
             {
                 GameObject obj = interaction.gameObject;
 
-                // Walk parent chain to see if it’s a door
+                // Walk parent chain to see if itâ€™s a door
                 Transform current = obj.transform;
                 bool isDoor = false;
-                List<string> chainNames = new List<string>();
 
                 while (current != null)
                 {
-                    chainNames.Add(current.name);
                     foreach (string keyword in DoorKeywords)
                     {
                         if (current.name.ToLower().Contains(keyword.ToLower()))
@@ -44,8 +42,6 @@ namespace DisableDoors
                     if (isDoor) break;
                     current = current.parent;
                 }
-                chainNames.Reverse();
-                string chain = string.Join(" -> ", chainNames);
                 if (isDoor)
                 {
                     // Disable only the interaction component
@@ -55,3 +51,4 @@ namespace DisableDoors
         }
     }
 }
+
