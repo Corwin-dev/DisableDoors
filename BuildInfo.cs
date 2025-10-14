@@ -23,7 +23,7 @@ namespace DisableDoors
         public const string Author = "CorwinK";
         /// <summary>Current version</summary>
         /// <value>This should always be <see href="https://semver.org">Semantic Versioning</see></value>
-        public const string Version = "0.0.2";
+        public const string Version = "0.0.3";
         /// <summary>Name used on GUI's, like ModSettings</summary>
         public const string GUIName = "DisableDoors";
         /// <summary>The minimum Melon Loader version that your mod requires</summary>
@@ -42,7 +42,7 @@ namespace DisableDoors
         /// </remarks>
         public const string[] PreviousAuthors = null;
         /// <summary>What the mod does</summary>
-        public const string Description = null;
+        public const string Description = "Disables any interaction labeled 'InteriorLoadTrigger'";
         /// <summary>Company that made it</summary>
         public const string Company = null;
         /// <summary>A valid download link</summary>
@@ -50,12 +50,12 @@ namespace DisableDoors
         /// <para>This must be a link to a file, not a site</para>
         /// </remarks>
         /// <example>https://github.com/Arkhorse/FuelManager/releases/download/latest/FuelManager.dll</example>
-        public const string DownloadLink = null;
+        public const string DownloadLink = https://github.com/Corwin-dev/DisableDoors/releases;
         /// <summary>Copyright info</summary>
         /// <remarks>When updating the year, use the StartYear-CurrentYear format eg(Copyright © 2020-2024)</remarks>
-        public const string Copyright = "Copyright © 2024";
+        public const string Copyright = "Copyright © 2025";
         /// <summary>Trademark info</summary>
-        public const string Trademark = null;
+        public const string Trademark = "The Long Dark";
         /// <summary>Product Name (Generally use the Name)</summary>
         public const string Product = "DisableDoors";
         /// <summary>Culture info</summary>
@@ -65,3 +65,4 @@ namespace DisableDoors
         #endregion
     }
 }
+
