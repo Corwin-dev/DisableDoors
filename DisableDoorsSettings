@@ -1,0 +1,12 @@
+using ModSettings;
+
+namespace DisableDoors
+{
+    internal class DisableDoorsSettings : JsonModSettings
+    {
+        internal static DisableDoorsSettings Instance;
+        [Name("Disable Doors")]
+        [Description("Enabled the mod")]
+        public bool DisableDoors = true;
+    }
+}
