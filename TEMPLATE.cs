@@ -5,7 +5,14 @@ using Il2CppTLD.Interactions;
 
 namespace DisableDoors
 {
-    public class Main : MelonMod {}
+    public class Main : MelonMod 
+    {
+        public override void OnInitializeMelon()
+        {
+            DisableDoorsSettings.Instance = new DisableDoorsSettings(); 
+            DisableDoorsSettings.Instance.AddToModSettings("Disable Doors");
+        }
+    }
 
     [HarmonyPatch(typeof(BaseInteraction), "InitializeInteraction")]
     public static class Patch_BaseInteraction_InititalizeInteraction
@@ -14,8 +21,9 @@ namespace DisableDoors
         {
             if (__instance.gameObject.transform.name == "InteriorLoadTrigger")
             {
-                __instance.CanInteract = false;
+                __instance.CanInteract = !DisableDoorsSettings.Instance.DisableDoors;
             }
         }
     }
 }
+
