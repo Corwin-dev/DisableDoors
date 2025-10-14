@@ -1,36 +1,20 @@
+using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
-using Il2CppTLD;
 using Il2CppTLD.Interactions;
 
 namespace DisableDoors
 {
-    public class Main : MelonMod
+    public class Main : MelonMod {}
+
+    [HarmonyPatch(typeof(BaseInteraction), "InitializeInteraction")]
+    public static class Patch_BaseInteraction_InititalizeInteraction
     {
-        private readonly string[] DoorKeywords = { "InteriorLoadTrigger" };
-
-        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        static void Prefix(BaseInteraction __instance)
         {
-            DisableDoorInteractions();
-        }
-
-        private void DisableDoorInteractions()
-        {
-            BaseInteraction[] interactions = UnityEngine.Object.FindObjectsOfType<BaseInteraction>();
-
-            foreach (BaseInteraction interaction in interactions)
+            if (__instance.gameObject.transform.name == "InteriorLoadTrigger")
             {
-                GameObject obj = interaction.gameObject;
-
-                foreach (string keyword in DoorKeywords)
-                {
-                    if (obj.name.ToLower().Contains(keyword.ToLower()))
-                    {
-                        //MelonLogger.Msg($"Disabling interaction on door: {obj.name}");
-                        interaction.enabled = false;
-                        break;
-                    }
-                }
+                __instance.CanInteract = false;
             }
         }
     }
