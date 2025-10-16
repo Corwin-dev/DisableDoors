@@ -6,9 +6,9 @@ using ModSettings;
 
 namespace DisableDoors
 {
-    internal class DisableDoorsSettings : JsonModSettings
+    internal class Settings : JsonModSettings
     {
-        internal static DisableDoorsSettings? Instance;
+        internal static Settings? Instance;
         [Name("Disable Doors")]
         [Description("Enables the mod")]
         public bool DisableDoors = true;
@@ -17,8 +17,8 @@ namespace DisableDoors
     {
         public override void OnInitializeMelon()
         {
-            DisableDoorsSettings.Instance = new DisableDoorsSettings(); 
-            DisableDoorsSettings.Instance.AddToModSettings("Disable Doors");
+            Settings.Instance = new Settings();
+            Settings.Instance.AddToModSettings("Disable Doors");
         }
     }
 
@@ -27,7 +27,7 @@ namespace DisableDoors
     {
         static bool Prefix(TimedHoldInteraction __instance)
         {
-            if (DisableDoorsSettings.Instance?.DisableDoors != true) return true;
+            if (Settings.Instance?.DisableDoors != true) return true;
 
             if (__instance?.gameObject?.name == "InteriorLoadTrigger")
                 return false;
