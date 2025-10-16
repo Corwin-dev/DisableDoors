@@ -19,6 +19,9 @@ namespace DisableDoors
     {
         static bool Prefix(TimedHoldInteraction __instance)
         {
+            if (__instance == null || __instance.gameObject == null || DisableDoorsSettings.Instance == null)
+                return true;
+
             if (DisableDoorsSettings.Instance.DisableDoors && __instance.gameObject.transform.name == "InteriorLoadTrigger")
             {
                 return false;

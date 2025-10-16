@@ -1,4 +1,4 @@
-using ModSettings;
+﻿using ModSettings;
 
 namespace DisableDoors
 {
@@ -6,7 +6,7 @@ namespace DisableDoors
     {
         internal static DisableDoorsSettings Instance;
         [Name("Disable Doors")]
-        [Description("Enabled the mod")]
+        [Description("Enables the mod")]
         public bool DisableDoors = true;
     }
 }

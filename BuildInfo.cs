@@ -42,7 +42,7 @@ namespace DisableDoors
         /// </remarks>
         public const string[] PreviousAuthors = null;
         /// <summary>What the mod does</summary>
-        public const string Description = "Disables any interaction labeled 'InteriorLoadTrigger'";
+        public const string Description = null;
         /// <summary>Company that made it</summary>
         public const string Company = null;
         /// <summary>A valid download link</summary>
@@ -50,12 +50,12 @@ namespace DisableDoors
         /// <para>This must be a link to a file, not a site</para>
         /// </remarks>
         /// <example>https://github.com/Arkhorse/FuelManager/releases/download/latest/FuelManager.dll</example>
-        public const string DownloadLink = https://github.com/Corwin-dev/DisableDoors/releases;
+        public const string DownloadLink = null;
         /// <summary>Copyright info</summary>
         /// <remarks>When updating the year, use the StartYear-CurrentYear format eg(Copyright © 2020-2024)</remarks>
-        public const string Copyright = "Copyright © 2025";
+        public const string Copyright = "Copyright © 2024";
         /// <summary>Trademark info</summary>
-        public const string Trademark = "The Long Dark";
+        public const string Trademark = null;
         /// <summary>Product Name (Generally use the Name)</summary>
         public const string Product = "DisableDoors";
         /// <summary>Culture info</summary>
@@ -65,6 +65,3 @@ namespace DisableDoors
         #endregion
     }
 }
-
-
-
