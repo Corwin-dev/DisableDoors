@@ -14,15 +14,16 @@ namespace DisableDoors
         }
     }
 
-    [HarmonyPatch(typeof(BaseInteraction), "InitializeInteraction")]
-    public static class Patch_BaseInteraction_InititalizeInteraction
+    [HarmonyPatch(typeof(TimedHoldInteraction), "PerformHold")]
+    public static class Patch_TimedHoldInteraction_PerformHold
     {
-        static void Prefix(BaseInteraction __instance)
+        static bool Prefix(TimedHoldInteraction __instance)
         {
-            if (__instance.gameObject.transform.name == "InteriorLoadTrigger")
+            if (DisableDoorsSettings.Instance.DisableDoors && __instance.gameObject.transform.name == "InteriorLoadTrigger")
             {
-                __instance.CanInteract = !DisableDoorsSettings.Instance.DisableDoors;
+                return false;
             }
+            return true;
         }
     }
 }
