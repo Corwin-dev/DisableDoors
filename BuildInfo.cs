@@ -23,7 +23,7 @@ namespace DisableDoors
         public const string Author = "CorwinK";
         /// <summary>Current version</summary>
         /// <value>This should always be <see href="https://semver.org">Semantic Versioning</see></value>
-        public const string Version = "0.1.1";
+        public const string Version = "0.2.0";
         /// <summary>Name used on GUI's, like ModSettings</summary>
         public const string GUIName = "DisableDoors";
         /// <summary>The minimum Melon Loader version that your mod requires</summary>
