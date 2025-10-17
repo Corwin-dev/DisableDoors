@@ -1,10 +1,10 @@
 using HarmonyLib;
-using MelonLoader;
-using UnityEngine;
-using ModSettings;
 using Il2CppTLD.Interactions;
-using UnityEngine.SceneManagement;
+using MelonLoader;
+using ModSettings;
+using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 namespace DisableDoors
 {
@@ -17,19 +17,15 @@ namespace DisableDoors
         public bool DisableDoors = true;
 
         [Name("Disable Interior Loading Doors")]
-        [Description("This disables doors that load to an interior")]
         public bool DisableInteriorLoadTrigger = true;
 
         [Name("Disable Swinging Doors")]
-        [Description("This disables doors that animate open or closed. ie Fishing Hut, Lookout Tower")]
-        public bool DisableSwingingDoors = false; 
+        public bool DisableSwingingDoors = false;
 
         [Name("Disable Vehicle Doors")]
-        [Description("This disables doors for cars and trucks")]
         public bool DisableVehicleDoors = false;
 
         [Name("Disable Riken Entrance")]
-        [Description("This disables the main entrance to the Riken")]
         public bool DisableRiken = true;
     }
 
@@ -39,15 +35,7 @@ namespace DisableDoors
         {
             Settings.Instance = new Settings();
             Settings.Instance.AddToModSettings("Disable Doors");
-
-            // Hook the scene loaded event
-            UnityEngine.SceneManagement.SceneManager.sceneLoaded += (UnityAction<Scene, LoadSceneMode>)OnSceneLoad;
-        }
-
-        public void OnSceneLoad(Scene scene, LoadSceneMode mode)
-        {
-            //MelonLogger.Msg($"Scene Loaded: {scene.name}, Root objects: {scene.rootCount}");
-        }
+        }   
     }
 
     [HarmonyPatch(typeof(TimedHoldInteraction), "PerformHold")]
@@ -55,70 +43,50 @@ namespace DisableDoors
     {
         static bool Prefix(TimedHoldInteraction __instance)
         {
-            if (Settings.Instance?.DisableDoors != true) return true;
+            var s = Settings.Instance;
+            if (s?.DisableDoors != true) return true;
 
-            GameObject obj = __instance.gameObject;
-            string name = obj.name;
-            if (string.IsNullOrEmpty(name)) return true;
+            var n = __instance.gameObject.name;
+            if (string.IsNullOrEmpty(n)) return true;
 
-            MelonLogger.Msg($"[Interaction] GameObject name: {name}");
+            MelonLogger.Msg($"TimedHoldInteraction on {n}");
 
-            // Define keyword arrays for each setting
-            string[] interiorKeywords = { "InteriorLoadTrigger", "TRIGGER_" };
-            string[] swingingKeywords = { "FishingCabin_Door", "ForestryLookout_Door", "PorchDoor", "StoneCabinADoor" };
-            string[] vehicleKeywords = { "RightFrontDoor", "LeftFrontDoor", "RightRearDoor", "LeftRearDoor", "CrewSpeederDoor" };
+            if (s.DisableInteriorLoadTrigger && (n.StartsWith("InteriorLoadTrigger") || n.StartsWith("TRIGGER_")))
+                return Block(__instance);
 
-            if (Settings.Instance.DisableInteriorLoadTrigger &&
-                interiorKeywords.Any(k => name.Contains(k, System.StringComparison.OrdinalIgnoreCase)))
-                return false;
+            if (s.DisableSwingingDoors && (n.Contains("FishingCabin_Door") || n.Contains("ForestryLookout_Door") || n.Contains("PorchDoor") || n.Contains("StoneCabinADoor") || n.Equals("Door_Mesh_LOD0") || n.Contains("WoodDoorInt")))
+                return Block(__instance);
 
-            if (Settings.Instance.DisableSwingingDoors &&
-                swingingKeywords.Any(k => name.Contains(k, System.StringComparison.OrdinalIgnoreCase)))
-                return false;
+            if (s.DisableVehicleDoors && (n.Contains("RightFrontDoor") || n.Contains("LeftFrontDoor") || n.Contains("RightRearDoor") || n.Contains("LeftRearDoor") || n.Contains("CrewSpeederDoor") || n.Contains("Helicopter_A_Door") || n.Contains("PlaneBeaver_Door_")))
+                return Block(__instance);
 
-            if (Settings.Instance.DisableVehicleDoors &&
-                vehicleKeywords.Any(k => name.Contains(k, System.StringComparison.OrdinalIgnoreCase)))
-                return false;
-
-            if (Settings.Instance.DisableRiken)
+            if (s.DisableRiken)
             {
-                //MelonLogger.Msg("[Debug] DisableRiken is enabled.");
-                LoadingZone zone = obj.GetComponent<LoadingZone>();
-                if (zone == null) return true;
-                LoadScene scene = zone.m_PartnerLoadScene;
-                if (scene == null) return true;
-                //MelonLogger.Msg($"[Debug] LoadScene.m_SceneToLoad: {scene.m_SceneToLoad}");
-                if (string.Equals(scene.m_SceneToLoad, "WhalingShipA", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    //MelonLogger.Msg("[Interaction] Blocking access to Riken.");
-                    return false;
-                }
+                var zone = __instance.gameObject.GetComponent<LoadingZone>();
+                var scene = zone?.m_PartnerLoadScene;
+                if (scene != null && scene.m_SceneToLoad == "WhalingShipA")
+                    return Block(__instance);
             }
 
             return true;
         }
+
+        static bool Block(TimedHoldInteraction i)
+        {
+            i._HoverText_k__BackingField = "Disabled";
+            return false;
+        }
     }
-    [HarmonyPatch(typeof(LoadScene), "Activate")]
-    [HarmonyPatch(new Type[] { typeof(bool) })]
+
+    [HarmonyPatch(typeof(LoadScene), "Activate", new[] { typeof(bool) })]
     public static class Patch_LoadScene_Activate
     {
         static bool Prefix(LoadScene __instance)
         {
-            if (Settings.Instance?.DisableDoors != true) return true;
-            GameObject obj = __instance.gameObject;
-            string name = obj.name;
-            if (string.IsNullOrEmpty(name)) return true;
-            //MelonLogger.Msg($"[LoadScene] GameObject name: {name}");
-
-            if (Settings.Instance.DisableRiken)
-            {
-                //MelonLogger.Msg("[Debug] DisableRiken is enabled.");
-                if (string.Equals(__instance.m_SceneToLoad, "WhalingShipA", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    //MelonLogger.Msg("[LoadScene] Blocking access to Riken.");
-                    return false;
-                }
-            }
+            var s = Settings.Instance;
+            if (s?.DisableDoors != true) return true;
+            if (s.DisableRiken && __instance.m_SceneToLoad?.Equals("WhalingShipA", System.StringComparison.OrdinalIgnoreCase) == true)
+                return false;
             return true;
         }
     }
