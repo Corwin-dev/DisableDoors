@@ -109,7 +109,7 @@ namespace DisableDoors
 
             if (__instance.gameObject == null)
             {
-                MelonLogger.Msg("[DisableDoors] Skipped: gameObject is null.");
+                // MelonLogger.Msg("[DisableDoors] Skipped: gameObject is null.");
                 return;
             }
 
@@ -119,7 +119,7 @@ namespace DisableDoors
             // Early exit for whitelisted scenes
             if (Main.TransitionWhitelist.Any(wl => sceneToLoad.Contains(wl)))
             {
-                MelonLogger.Msg($"Whitelisted: {objectName}, Scene: {sceneToLoad} (No disable/lock applied)");
+                // MelonLogger.Msg($"Whitelisted: {objectName}, Scene: {sceneToLoad} (No disable/lock applied)");
                 return;
             }
 
@@ -130,7 +130,7 @@ namespace DisableDoors
             bool minesEnabled = PlayerPrefs.HasKey("DisableMines_" + saveName) && Convert.ToBoolean(PlayerPrefs.GetString("DisableMines_" + saveName));
             bool cavesEnabled = PlayerPrefs.HasKey("DisableCaves_" + saveName) && Convert.ToBoolean(PlayerPrefs.GetString("DisableCaves_" + saveName));
 
-            MelonLogger.Msg($"[DisableDoors] Settings: DisableInteriorLoadTrigger={interiorEnabled}, DisableMines={minesEnabled}, DisableCaves={cavesEnabled}");
+            // MelonLogger.Msg($"[DisableDoors] Settings: DisableInteriorLoadTrigger={interiorEnabled}, DisableMines={minesEnabled}, DisableCaves={cavesEnabled}");
 
             // Keywords
             bool matchesObjectKeyword = Main.InteriorLoadingDoorKeywords.Any(keyword => objectName.Contains(keyword));
@@ -142,22 +142,22 @@ namespace DisableDoors
             bool shouldDisable = interiorEnabled && matchesObjectKeyword;
             if (shouldDisable)
             {
-                __instance.gameObject.SetActive(false);
-                MelonLogger.Msg($"SetInactive: {objectName}, Scene: {sceneToLoad} (InteriorLoadingDoor match, not whitelisted)");
+                __instance.CanInteract = false;
+                // MelonLogger.Msg($"SetInactive: {objectName}, Scene: {sceneToLoad} (InteriorLoadingDoor match, not whitelisted)");
                 return;
             }
 
             // Disable logic for mines, caves, and whaling ship (all gated by their settings)
             if ((minesEnabled && isMine) || (cavesEnabled && isCave) || (interiorEnabled && isWhalingShip))
             {
-                __instance.gameObject.SetActive(false);
-                MelonLogger.Msg($"SetInactive: {objectName}, Scene: {sceneToLoad} (Mine/Cave/WhalingShip match, not whitelisted)");
+                __instance.CanInteract = false;
+                // MelonLogger.Msg($"SetInactive: {objectName}, Scene: {sceneToLoad} (Mine/Cave/WhalingShip match, not whitelisted)");
                 return;
             }
 
             if (!shouldDisable)
             {
-                MelonLogger.Msg($"Skipped {objectName}, Scene: {sceneToLoad}");
+                // MelonLogger.Msg($"Skipped {objectName}, Scene: {sceneToLoad}");
             }
         }
     }
@@ -207,7 +207,7 @@ namespace DisableDoors
 
             if (__instance.gameObject == null)
             {
-                MelonLogger.Msg("[DisableDoors] Skipped LoadingZone: gameObject is null.");
+                // MelonLogger.Msg("[DisableDoors] Skipped LoadingZone: gameObject is null.");
                 return;
             }
 
@@ -222,7 +222,7 @@ namespace DisableDoors
             if (interiorEnabled && partnerScene != null && partnerScene.m_SceneToLoad.Contains("WhalingShip"))
             {
                 __instance.gameObject.SetActive(false);
-                MelonLogger.Msg($"SetInactive: {objectName}, PartnerScene: {partnerScene.m_SceneToLoad} (WhalingShip match)");
+                // MelonLogger.Msg($"SetInactive: {objectName}, PartnerScene: {partnerScene.m_SceneToLoad} (WhalingShip match)");
             }
         }
     }
@@ -234,7 +234,7 @@ namespace DisableDoors
             if (settingEnabled && keywords.Any(keyword => objectName.Contains(keyword)))
             {
                 interaction.CanInteract = false;
-                MelonLogger.Msg($"SetInactive: {objectName} ({logContext} match)");
+                // MelonLogger.Msg($"SetInactive: {objectName} ({logContext} match)");
             }
         }
     }
