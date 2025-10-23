@@ -1,93 +1,241 @@
-using HarmonyLib;
 using Il2CppTLD.Interactions;
-using MelonLoader;
-using ModSettings;
-using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.SceneManagement;
 
 namespace DisableDoors
 {
-    internal class Settings : JsonModSettings
+    public class Main : MelonMod 
     {
-        internal static Settings? Instance;
+        internal static CustomGameSettings options = new();
 
-        [Name("Disable Doors")]
-        [Description("Enables the mod")]
-        public bool DisableDoors = true;
+        public override void OnInitializeMelon()
+        {
+            options = new CustomGameSettings();
+            options.AddToCustomModeMenu(Position.BelowGear);
+        }
 
+        internal static readonly List<string> SwingingDoorObjectKeywords = new()
+        {
+            "FishingCabin_Door", "ForestryLookout_Door", "PorchDoor", "StoneCabinADoor", "Door_Mesh_LOD0", "WoodDoorInt"
+        };
+
+        internal static readonly List<string> VehicleDoorObjectKeywords = new()
+        {
+            "RightFrontDoor", "LeftFrontDoor", "RightRearDoor", "LeftRearDoor", "CrewSpeederDoor", "Helicopter_A_Door", "PlaneBeaver_Door_"
+        };
+
+        internal static readonly List<string> InteriorLoadingDoorKeywords = new()
+        {
+            "InteriorLoadTrigger", "TRIGGER_"
+        };
+
+        internal static readonly List<string> TransitionWhitelist = new()
+        {
+            "Transition", "Region"
+        };
+
+        internal static string GetPrefKey(string prefix, string saveName) => $"{prefix}_{saveName}";
+
+        internal static void SaveSettings()
+        {
+            string saveName = SaveGameSystem.GetCurrentSaveName();
+            PlayerPrefs.SetString(GetPrefKey("DisableInteriorLoadTrigger", saveName), options.DisableInteriorLoadTrigger.ToString());
+            PlayerPrefs.SetString(GetPrefKey("DisableSwingingDoors", saveName), options.DisableSwingingDoors.ToString());
+            PlayerPrefs.SetString(GetPrefKey("DisableVehicleDoors", saveName), options.DisableVehicleDoors.ToString());
+            PlayerPrefs.SetString(GetPrefKey("DisableMines", saveName), options.DisableMines.ToString());
+            PlayerPrefs.SetString(GetPrefKey("DisableCaves", saveName), options.DisableCaves.ToString());
+            PlayerPrefs.Save();
+        }
+
+        internal static void DeleteSettings(string saveName)
+        {
+            if (saveName == null) return;
+            if (saveName == SaveGameSlots.AUTOSAVE_SLOT_NAME) return;
+            if (saveName == SaveGameSlots.QUICKSAVE_SLOT_PREFIX) return;
+            PlayerPrefs.DeleteKey(GetPrefKey("DisableInteriorLoadTrigger", saveName));
+            PlayerPrefs.DeleteKey(GetPrefKey("DisableSwingingDoors", saveName));
+            PlayerPrefs.DeleteKey(GetPrefKey("DisableVehicleDoors", saveName));
+            PlayerPrefs.DeleteKey(GetPrefKey("DisableMines", saveName));
+            PlayerPrefs.DeleteKey(GetPrefKey("DisableCaves", saveName));
+        }
+    }
+
+    internal class CustomGameSettings : ModSettingsBase
+    {
         [Name("Disable Interior Loading Doors")]
-        public bool DisableInteriorLoadTrigger = true;
+        [Description("Disable doors that load to an interior location.")]
+        public bool DisableInteriorLoadTrigger = false;
 
         [Name("Disable Swinging Doors")]
+        [Description("Disable swinging doors that animate open and closed")]
         public bool DisableSwingingDoors = false;
 
         [Name("Disable Vehicle Doors")]
+        [Description("Disable cab doors for motorized vehicles")]
         public bool DisableVehicleDoors = false;
 
-        [Name("Disable Riken Entrance")]
-        public bool DisableRiken = true;
+        [Name("Disable Mines")]
+        [Description("Disables mines except for transitions")]
+        public bool DisableMines = false;
+
+        [Name("Disable Caves")]
+        [Description("Disables caves except for transitions")]
+        public bool DisableCaves = false;
     }
 
-    public class Main : MelonMod
+    [HarmonyPatch(typeof(GameManager), nameof(GameManager.LaunchSandbox))]
+    internal class GameManager_LaunchSandbox_Patch
     {
-        public override void OnInitializeMelon()
+        private static void Prefix()
         {
-            Settings.Instance = new Settings();
-            Settings.Instance.AddToModSettings("Disable Doors");
-        }   
+            Main.SaveSettings();
+        }
     }
 
-    [HarmonyPatch(typeof(TimedHoldInteraction), "PerformHold")]
-    public static class Patch_TimedHoldInteraction_PerformHold
+    [HarmonyPatch(typeof(SaveGameSystem), nameof(SaveGameSystem.DeleteSaveFiles), new Type[] { typeof(string) })]
+    internal class ModData_SaveGameSystem_DeleteSaveFiles
     {
-        static bool Prefix(TimedHoldInteraction __instance)
+        private static void Postfix(string name)
         {
-            var s = Settings.Instance;
-            if (s?.DisableDoors != true) return true;
+            Main.DeleteSettings(name);
+        }
+    }
 
-            var n = __instance.gameObject.name;
-            if (string.IsNullOrEmpty(n)) return true;
+    [HarmonyPatch(typeof(LoadScene), "Awake")]
+    public static class Patch_LoadScene_Awake
+    {
+        static void Prefix(LoadScene __instance)
+        {
+            if (ExperienceModeManager.GetCurrentExperienceModeType() != ExperienceModeType.Custom)
+                return;
 
-            MelonLogger.Msg($"TimedHoldInteraction on {n}");
-
-            if (s.DisableInteriorLoadTrigger && (n.StartsWith("InteriorLoadTrigger") || n.StartsWith("TRIGGER_")))
-                return Block(__instance);
-
-            if (s.DisableSwingingDoors && (n.Contains("FishingCabin_Door") || n.Contains("ForestryLookout_Door") || n.Contains("PorchDoor") || n.Contains("StoneCabinADoor") || n.Equals("Door_Mesh_LOD0") || n.Contains("WoodDoorInt")))
-                return Block(__instance);
-
-            if (s.DisableVehicleDoors && (n.Contains("RightFrontDoor") || n.Contains("LeftFrontDoor") || n.Contains("RightRearDoor") || n.Contains("LeftRearDoor") || n.Contains("CrewSpeederDoor") || n.Contains("Helicopter_A_Door") || n.Contains("PlaneBeaver_Door_")))
-                return Block(__instance);
-
-            if (s.DisableRiken)
+            if (__instance.gameObject == null)
             {
-                var zone = __instance.gameObject.GetComponent<LoadingZone>();
-                var scene = zone?.m_PartnerLoadScene;
-                if (scene != null && scene.m_SceneToLoad == "WhalingShipA")
-                    return Block(__instance);
+                MelonLogger.Msg("[DisableDoors] Skipped: gameObject is null.");
+                return;
             }
 
-            return true;
-        }
+            string sceneToLoad = __instance.m_SceneToLoad ?? string.Empty;
+            string objectName = __instance.gameObject.name ?? string.Empty;
 
-        static bool Block(TimedHoldInteraction i)
-        {
-            i._HoverText_k__BackingField = "Disabled";
-            return false;
+            // Early exit for whitelisted scenes
+            if (Main.TransitionWhitelist.Any(wl => sceneToLoad.Contains(wl)))
+            {
+                MelonLogger.Msg($"Whitelisted: {objectName}, Scene: {sceneToLoad} (No disable/lock applied)");
+                return;
+            }
+
+            string saveName = SaveGameSystem.GetCurrentSaveName();
+
+            // Settings
+            bool interiorEnabled = PlayerPrefs.HasKey("DisableInteriorLoadTrigger_" + saveName) && Convert.ToBoolean(PlayerPrefs.GetString("DisableInteriorLoadTrigger_" + saveName));
+            bool minesEnabled = PlayerPrefs.HasKey("DisableMines_" + saveName) && Convert.ToBoolean(PlayerPrefs.GetString("DisableMines_" + saveName));
+            bool cavesEnabled = PlayerPrefs.HasKey("DisableCaves_" + saveName) && Convert.ToBoolean(PlayerPrefs.GetString("DisableCaves_" + saveName));
+
+            MelonLogger.Msg($"[DisableDoors] Settings: DisableInteriorLoadTrigger={interiorEnabled}, DisableMines={minesEnabled}, DisableCaves={cavesEnabled}");
+
+            // Keywords
+            bool matchesObjectKeyword = Main.InteriorLoadingDoorKeywords.Any(keyword => objectName.Contains(keyword));
+            bool isMine = sceneToLoad.Contains("Mine");
+            bool isCave = sceneToLoad.Contains("Cave");
+            bool isWhalingShip = sceneToLoad.Contains("WhalingShip");
+
+            // Lock logic for InteriorLoadingDoor matches only
+            bool shouldDisable = interiorEnabled && matchesObjectKeyword;
+            if (shouldDisable)
+            {
+                __instance.gameObject.SetActive(false);
+                MelonLogger.Msg($"SetInactive: {objectName}, Scene: {sceneToLoad} (InteriorLoadingDoor match, not whitelisted)");
+                return;
+            }
+
+            // Disable logic for mines, caves, and whaling ship (all gated by their settings)
+            if ((minesEnabled && isMine) || (cavesEnabled && isCave) || (interiorEnabled && isWhalingShip))
+            {
+                __instance.gameObject.SetActive(false);
+                MelonLogger.Msg($"SetInactive: {objectName}, Scene: {sceneToLoad} (Mine/Cave/WhalingShip match, not whitelisted)");
+                return;
+            }
+
+            if (!shouldDisable)
+            {
+                MelonLogger.Msg($"Skipped {objectName}, Scene: {sceneToLoad}");
+            }
         }
     }
 
-    [HarmonyPatch(typeof(LoadScene), "Activate", new[] { typeof(bool) })]
-    public static class Patch_LoadScene_Activate
+    [HarmonyPatch(typeof(OpenClose), "Awake")]
+    public static class Patch_SwingingDoor_Awake
     {
-        static bool Prefix(LoadScene __instance)
+        static void Prefix(OpenClose __instance)
         {
-            var s = Settings.Instance;
-            if (s?.DisableDoors != true) return true;
-            if (s.DisableRiken && __instance.m_SceneToLoad?.Equals("WhalingShipA", System.StringComparison.OrdinalIgnoreCase) == true)
-                return false;
-            return true;
+            if (ExperienceModeManager.GetCurrentExperienceModeType() != ExperienceModeType.Custom) return;
+            if (__instance.gameObject == null) return;
+
+            string objectName = __instance.gameObject.name ?? string.Empty;
+            string saveName = SaveGameSystem.GetCurrentSaveName();
+            bool swingingDoorsEnabled = PlayerPrefs.HasKey(Main.GetPrefKey("DisableSwingingDoors", saveName)) &&
+                Convert.ToBoolean(PlayerPrefs.GetString(Main.GetPrefKey("DisableSwingingDoors", saveName)));
+
+            PatchHelper.DisableIfMatch(__instance, objectName, swingingDoorsEnabled, Main.SwingingDoorObjectKeywords, "SwingingDoor");
+        }
+    }
+
+    [HarmonyPatch(typeof(VehicleDoor), "Awake")]
+    public static class Patch_VehicleDoor_Awake
+    {
+        static void Prefix(VehicleDoor __instance)
+        {
+            if (ExperienceModeManager.GetCurrentExperienceModeType() != ExperienceModeType.Custom) return;
+            if (__instance.gameObject == null) return;
+
+            string objectName = __instance.gameObject.name ?? string.Empty;
+            string saveName = SaveGameSystem.GetCurrentSaveName();
+            bool vehicleDoorsEnabled = PlayerPrefs.HasKey(Main.GetPrefKey("DisableVehicleDoors", saveName)) &&
+                Convert.ToBoolean(PlayerPrefs.GetString(Main.GetPrefKey("DisableVehicleDoors", saveName)));
+
+            PatchHelper.DisableIfMatch(__instance, objectName, vehicleDoorsEnabled, Main.VehicleDoorObjectKeywords, "VehicleDoor");
+        }
+    }
+
+    // Fix for the LoadingZone patch: use the correct property for null-coalescing
+    [HarmonyPatch(typeof(LoadingZone), "Awake")]
+    public static class Patch_LoadingZone_Awake
+    {
+        static void Prefix(LoadingZone __instance)
+        {
+            if (ExperienceModeManager.GetCurrentExperienceModeType() != ExperienceModeType.Custom)
+                return;
+
+            if (__instance.gameObject == null)
+            {
+                MelonLogger.Msg("[DisableDoors] Skipped LoadingZone: gameObject is null.");
+                return;
+            }
+
+            LoadScene partnerScene = __instance.m_PartnerLoadScene;
+            string objectName = __instance.gameObject.name ?? string.Empty;
+            string saveName = SaveGameSystem.GetCurrentSaveName();
+
+            // Check for InteriorLoading preference
+            bool interiorEnabled = PlayerPrefs.HasKey(Main.GetPrefKey("DisableInteriorLoadTrigger", saveName)) &&
+                Convert.ToBoolean(PlayerPrefs.GetString(Main.GetPrefKey("DisableInteriorLoadTrigger", saveName)));
+
+            if (interiorEnabled && partnerScene != null && partnerScene.m_SceneToLoad.Contains("WhalingShip"))
+            {
+                __instance.gameObject.SetActive(false);
+                MelonLogger.Msg($"SetInactive: {objectName}, PartnerScene: {partnerScene.m_SceneToLoad} (WhalingShip match)");
+            }
+        }
+    }
+
+    internal class PatchHelper
+    {
+        internal static void DisableIfMatch(TimedHoldInteraction interaction, string objectName, bool settingEnabled, IEnumerable<string> keywords, string logContext)
+        {
+            if (settingEnabled && keywords.Any(keyword => objectName.Contains(keyword)))
+            {
+                interaction.CanInteract = false;
+                MelonLogger.Msg($"SetInactive: {objectName} ({logContext} match)");
+            }
         }
     }
 }
